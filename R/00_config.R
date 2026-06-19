@@ -1,9 +1,8 @@
 # User configuration for the public analysis template.
-# Replace file paths and variable names only after creating a de-identified
-# analytic file with the standardized column names described in README.md.
+# Replace these placeholder paths only after preparing a de-identified analytic
+# file with the standardized column names described in README.md.
 
 analysis_file <- "data/analytic_input.csv"
-genetic_variant_file <- "data/genetic_variant_weights.csv"
 
 supplement_vars <- c(
   "supplement_vitamin_a",
@@ -15,11 +14,23 @@ supplement_vars <- c(
   "supplement_multivitamin"
 )
 
-continuous_covariates <- c(
+core_continuous_covariates <- c(
   "baseline_log10_lpa",
   "followup_time",
   "age",
-  "deprivation_index",
+  "deprivation_index"
+)
+
+core_categorical_covariates <- c(
+  "sex",
+  "ethnicity",
+  "smoking_status",
+  "alcohol_frequency",
+  "healthy_diet"
+)
+
+expanded_continuous_covariates <- c(
+  core_continuous_covariates,
   "body_mass_index",
   "systolic_bp",
   "total_cholesterol",
@@ -28,26 +39,41 @@ continuous_covariates <- c(
   "lpa_genetic_risk_score"
 )
 
-categorical_covariates <- c(
-  "sex",
-  "ethnicity",
-  "smoking_status",
-  "alcohol_frequency",
-  "healthy_diet",
+expanded_categorical_covariates <- c(
+  core_categorical_covariates,
   "cholesterol_lowering_medication"
 )
 
-primary_covariates <- c(continuous_covariates, categorical_covariates, supplement_vars)
+primary_covariates <- c(
+  core_continuous_covariates,
+  core_categorical_covariates,
+  supplement_vars
+)
+
+expanded_covariates <- c(
+  expanded_continuous_covariates,
+  expanded_categorical_covariates,
+  supplement_vars
+)
+
+pc_covariates <- paste0("pc", 1:10)
 
 lpa_category_cutpoints <- c(lower = 75, upper = 125)
-
-# These are deliberately user-supplied rather than hard-coded database values.
-assay_sensitivity_limits <- c(lower = NA_real_, upper = NA_real_)
-assay_near_limit_margin <- NA_real_
 cutpoint_proximity_margin <- 5
+relative_change_threshold <- 0.20
 
-primary_alpha <- 0.05 / length(supplement_vars)
+# Leave assay limits as missing unless the public user can specify the reportable
+# range for their own assay.
+assay_sensitivity_limits <- c(lower = NA_real_, upper = NA_real_)
+
 default_imputations <- 5
 stability_imputations <- 20
 imputation_iterations <- 10
+primary_alpha <- 0.05 / length(supplement_vars)
 
+ipw_truncation_quantiles <- c(lower = 0.01, upper = 0.99)
+
+# If a protocol defines the analytic cohort by genetic-score availability,
+# set this to TRUE and provide a generic binary column named
+# genetic_score_available.
+require_genetic_score_for_analysis <- FALSE

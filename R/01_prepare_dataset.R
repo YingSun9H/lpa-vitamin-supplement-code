@@ -6,9 +6,9 @@ read_standardized_data <- function(path = analysis_file) {
   read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
 }
 
-standardize_binary_supplements <- function(data, supplement_columns = supplement_vars) {
+standardize_binary_indicators <- function(data, columns) {
   data %>%
-    mutate(across(all_of(supplement_columns), ~ as.integer(.x == 1)))
+    mutate(across(all_of(columns), ~ as.integer(.x == 1)))
 }
 
 derive_lpa_outcomes <- function(data) {
@@ -41,22 +41,27 @@ derive_lpa_outcomes <- function(data) {
 }
 
 derive_analysis_sample <- function(data) {
-  required_exposure_outcome <- c("baseline_lpa", "repeat_lpa", supplement_vars)
+  required <- c("baseline_lpa", "repeat_lpa", supplement_vars)
+  if (isTRUE(require_genetic_score_for_analysis)) {
+    required <- c(required, "genetic_score_available")
+  }
 
   data %>%
-    filter(if_all(all_of(required_exposure_outcome), ~ !is.na(.x))) %>%
-    filter(!is.na(lpa_genetic_risk_score)) %>%
-    standardize_binary_supplements() %>%
+    filter(if_all(all_of(required), ~ !is.na(.x))) %>%
+    {
+      if (isTRUE(require_genetic_score_for_analysis)) {
+        filter(., genetic_score_available == 1)
+      } else {
+        .
+      }
+    } %>%
+    standardize_binary_indicators(supplement_vars) %>%
     derive_lpa_outcomes()
 }
 
 summarize_sample_derivation <- function(source_data, analysis_data) {
   data.frame(
-    step = c(
-      "Rows in prepared input file",
-      "Rows in final analytic sample"
-    ),
+    step = c("Rows in prepared input file", "Rows in final analytic sample"),
     n = c(nrow(source_data), nrow(analysis_data))
   )
 }
-
